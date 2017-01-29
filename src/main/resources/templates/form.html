@@ -1,18 +1,79 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
     <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+              integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+              crossorigin="anonymous"/>
+
         <title>Sign up form</title>
     </head>
     <body>
+        <div class="container">
+            <h1>Sign up to the event using this form</h1>
+            <form class="form-horizontal" action="#" th:action="@{/form}" method="POST">
+                <div class="form-group">
+                    <label for="name" class="col-sm-2 control-label">Name</label>
+                    <div class="col-sm-3">
+                        <input class="form-control" type="text" name="name" id="name"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address" class="col-sm-2 control-label">Address</label>
+                    <div class="col-sm-3">
+                        <input class="form-control" type="text" name="address" id="address"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reference" class="col-sm-2 control-label">Reference ID</label>
+                    <div class="col-sm-3">
+                        <input class="form-control" type="text" name="reference" id="reference"/>
+                        <span class="help-block">You can use this to check your details later.</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-2">
+                        <div class="col-sm-1">
+                            <input class="btn btn-default" type="submit" value="Submit"/>
+                        </div>
+                    </div>
+                </div>
+            </form>
 
-        <h1>Sign up to the event using this form</h1>
+            <h1>Check your details</h1>
+            <form class="form-horizontal" action="#" th:action="@{/details}" method="POST">
+                <div class="form-group">
+                    <label for="reference" class="col-sm-3 control-label">Reference ID</label>
+                    <div class="col-sm-3">
+                        <input class="form-control" type="password" name="reference" id="reference"
+                               th:value="${reference}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-3">
+                        <div class="col-sm-1">
+                            <input class="btn btn-default" type="submit" value="Search"/>
+                        </div>
+                    </div>
+                </div>
+            </form>
 
-        <form action="#" th:action="@{/form}" method="POST">
-            <p><label for="name">Name</label>: <input type="text" name="name" id="name"/></p>
-            <p><label for="address">Address</label>: <input type="text" name="address" id="address"/></p>
-            <p><input type="submit" value="Submit" /></p>
-        </form>
+            <div th:if="${reference} != ''">
+                <h1>Cancel your signup</h1>
+                <form class="form-horizontal" action="#" th:action="@{/cancel}" method="POST">
+                    <input class="btn btn-default" type="submit" value="Cancel"/>
+                </form>
+            </div>
 
-        <p></p>
+            <h2>The following people have already signed up:</h2>
+            <ul>
+                <li th:each="s : ${signups}">
+                    <span th:utext="${s.name}"></span>
+                </li>
+            </ul>
+        </div>
     </body>
 </html>

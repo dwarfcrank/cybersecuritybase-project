@@ -9,11 +9,23 @@
               integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
               crossorigin="anonymous"/>
 
-        <title>Thank you!</title>
+        <title>My Details</title>
     </head>
     <body>
         <div class="container">
-            <h1>Thank you! You have been signed up to the event!</h1>
+            <h1>My Details</h1>
+            <div th:each="s : ${signups}">
+                <p>
+                    <b>Name:</b> <span th:text="${s.name}"></span>
+                </p>
+                <p>
+                    <b>Address:</b> <span th:text="${s.address}"></span>
+                </p>
+                <p style="visibility: hidden;">
+                    <b>Reference ID:</b> <span th:text="${s.address}"></span>
+                </p>
+            </div>
+
             <a href="/">Back</a>
         </div>
     </body>

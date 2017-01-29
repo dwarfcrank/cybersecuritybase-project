@@ -8,15 +8,17 @@ public class Signup extends AbstractPersistable<Long> {
 
     private String name;
     private String address;
+    private String reference;
 
     public Signup() {
         super();
     }
 
-    public Signup(String name, String address) {
+    public Signup(String name, String address, String reference) {
         this();
         this.name = name;
         this.address = address;
+        this.reference = reference;
     }
 
     public String getName() {
@@ -35,4 +37,11 @@ public class Signup extends AbstractPersistable<Long> {
         this.address = address;
     }
 
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
+    }
 }

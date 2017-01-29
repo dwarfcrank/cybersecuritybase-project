@@ -1,0 +1,101 @@
+A1, SQL Injection
+Steps to Reproduce:
+    1. Fill in the sign-up form with arbitrary details.
+    2. Click "Submit" to submit the form.
+    3. Repeat steps 1 and 2 a couple of times to generate more entries in the database.
+    4. Enter "' or 1=1;--" (without quotes) in the reference ID field in the "Check my details" form.
+    5. Click "Search" to submit the form.
+    6. The details page should show every entry in the database.
+
+Fixing:
+The issue is caused by the detailsByReference() method in src/main/java/sec.project/controller/SignupDetailsController.java, which
+constructs an SQL query by interpolating values from the request directly:
+    public String detailsByReference(@RequestParam String reference, Model model) {
+        // ...
+        Query query = em.createNativeQuery("SELECT ID FROM SIGNUP WHERE REFERENCE = '" + reference + "';");
+        // ,,,
+    }
+
+This can be fixed by making the query use parameters and binding them:
+        // ,,,
+        Query query = em.createNativeQuery("SELECT ID FROM SIGNUP WHERE REFERENCE = ?;");
+        query.setParameter(1, reference);
+        // ,,,
+
+A3, Cross-Site Scripting
+Steps to Reproduce:
+    1. Fill in the sign-up form on the front page with the following details:
+       - Name: test<script>alert("name")</script>
+       - Address: test<script>alert("address")</script>
+       - Reference ID: test<script>alert("reference")</script>
+    2. Click "Submit" to submit the form.
+    3. Click "Back" on the confirmation page to go back to the front page.
+    4. A message box with the text "name" should pop up. This confirms the "name" parameter is vulnerable to Cross-Site Scripting.
+
+Fixing:
+The issue is caused by the use of unescaped text in the front page template (src/main/resources/templates/form.html, line 74):
+    <span th:utext="${s.name}"></span>
+
+Using th:utext causes input to be written into the resulting HTML as-is. This can be fixed by using th:text instead:
+    <span th:text="${s.name}"></span>
+
+A4, Insecure Direct Object References
+Steps to Reproduce:
+    1. Fill in the sign-up form with arbitrary details.
+    2. Click "Submit" to submit the form.
+    3. Repeat steps 1 and 2 a couple of times to generate more entries in the database.
+    4. Note the URL you were redirected to is of the form "http://<server>/details/<number>".
+    5. Copy the URL of the current page and modify the number at the end (decrement by one, for example).
+    6. The details (name and address) of another entry should be visible.
+
+Fixing:
+The issue is caused by directly using the database IDs to look up objects, in this case sign-up details. Fixing the issue
+can be done by checking the reference ID used for the current session and allowing or denying access to an object based on that:
+    public String showSignupDetails(@PathVariable Long signupId, Model model) {
+        // ...
+        String currentReference = (String)httpSession.getAttribute("reference");
+        if (!currentReference.equals(signup.getReference())) {
+            // Redirect somewhere else, like an error page
+            return "redirect:/form";
+        }
+        // ...
+    }
+
+A6, Sensitive Data Exposure
+Steps to Reproduce:
+    The reference ID is functionally equivalent to a password in this case and is considered sensitive data.
+    1. Fill in the sign-up form on the front page with arbitrary details.
+    2. Click "Submit" to submit the form.
+    3. You will be redirected to the details page.
+    4. Right-click on the page and select "View page source".
+    5. After the address element in the page should be a <p style="visibility: hidden;"> element which contains the reference ID but is hidden by the browser.
+
+Fixing:
+The issue is caused by including the reference ID in the HTML template and setting its visibility to hidden. Despite not being shown, it is still included in the
+response. Remove lines 24-26 in src/main/resources/templates/details.html to fix the issue.
+
+A8, Cross-Site Request Forgery
+Steps to Reproduce:
+    1. Fill in the sign-up form on the front page with arbitrary details.
+    2. Click "Submit" to submit the form.
+    3. Click "Back" on the confirmation page to go back to the front page.
+    4. Make sure the reference ID field in the "Check my details" form is filled in already.
+    5. Write the following HTML snippet into a file and open it in the browser. The snippet is also included as "csrf-poc.html" in the project repository root.
+        <html>
+            <body>
+                <form action="http://localhost:8080/cancel" method="POST">
+                    <input type="submit" value="Click here" />
+                </form>
+            </body>
+        </html>
+    6. Click on the "Click me" button.
+    7. A page with the text "Sad to see you go :(" should appear.
+    8. Click "Back" to go to the front page.
+    9. The latest entry in the list of people signed up should disappear.
+
+    Alternatively, use your browser's developer tools to modify the value of the hidden "_csrf" field in the "Cancel your signup" form.
+
+Fixing:
+Spring Security enables CSRF protection by default, so disabling it for certain routes is the root cause of this issue. Fixing is done by removing the
+line disabling CSRF protection for the "/cancel" route in src/main/java/sec/project/config/SecurityConfiguration.java, line 25:
+        http.csrf().ignoringAntMatchers("/cancel");
